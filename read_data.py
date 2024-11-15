@@ -1,6 +1,5 @@
 # import OS
 import os
-import matplotlib.axes as axes
 import matplotlib.pyplot as plt
 import pandas as pd
 data = []
