@@ -2,28 +2,33 @@
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
+
 data = []
+i=0
+
 def loadFiles():
-    for x in os.listdir("./data_raw"):
-            file_type = int(x.split("_")[0])
-            filename = x
-            data.append((file_type, filename))
-    df = pd.DataFrame(data)
-    df.rename(columns={0:"Type",1:"File"}, inplace=True)
+    for i, x in enumerate(os.listdir("./data_raw")):
+        file_type = int(x.split("_")[0])
+        filename = f"./data_raw/{x}"
+        file_data = pd.DataFrame(np.loadtxt(filename, delimiter=",",dtype=int))
+        data.append((file_type, x, file_data))
+        print(i)
+
+    df = pd.DataFrame(data, columns=["Type", "Filename", "Data"])
     print(df)
     return df
 
 def Plot(type):
-    files = df[df['Type'] == type]['File'].head(5)
+    files = df[df['Type'] == type]['Data'].head(5)
+    filenames = df[df['Type'] == type]['Filename'].head(5)
+    i = 0
     for file in files:
-        numbers = []
-        for line in open(f"./data_raw/{file}"):
-            number = line.split(',')
-            for i in range(len(number)):
-                number[i] = float(number[i])
-            numbers += number
-        xs = [x/204000.0 for x in range(len(numbers))]
-        plt.plot(xs, numbers, label=file)
+        label = filenames[i]
+        xs = [x/204000.0 for x in range(len(file))]
+        i += 1
+        plt.plot(xs, file,label=label)
+
 
     plt.legend()
     plt.xlabel("s")
@@ -35,4 +40,4 @@ def Plot(type):
     plt.close()
 
 df = loadFiles()
-Plot(input("input a coin type to plot(1,5,20,50,100,200): "))
+Plot(int(input("input a coin type to plot(1,5,20,50,100,200): ")))
