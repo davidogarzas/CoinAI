@@ -36,4 +36,4 @@ def Plot(type):
     plt.close()
 
 df = loadFiles()
-Plot(100)
+Plot(input("input a coin type to plot(1,5,20,50,100,200): "))
