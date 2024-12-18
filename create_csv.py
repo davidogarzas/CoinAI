@@ -17,7 +17,7 @@ def find_max_size():
     return max_size
 
 def create_csv(max_size):
-    csvFile = open('./result.csv','w',newline='')
+    csvFile = open('./test.csv','w',newline='')
     writer = csv.writer(csvFile)
     data = []
     i=0
@@ -26,6 +26,18 @@ def create_csv(max_size):
         filename = f"./data_raw/{x}"
         file_data = np.loadtxt(filename, delimiter=",",dtype=int).tolist()
         #data.append(filename)
+        if (file_type == 1):
+            file_type = 0
+        elif (file_type == 2):
+            file_type = 1
+        elif (file_type == 20):
+            file_type = 3
+        elif (file_type == 50):
+            file_type = 4
+        elif (file_type == 100):
+            file_type = 5
+        elif (file_type == 200):
+            file_type = 6
         data.append(file_type)
         data.extend(file_data)
 
