@@ -17,7 +17,7 @@ def find_max_size():
     return max_size
 
 def create_csv(max_size):
-    csvFile = open('./test.csv','w',newline='')
+    csvFile = open('./result.csv','w',newline='')
     writer = csv.writer(csvFile)
     data = []
     i=0
