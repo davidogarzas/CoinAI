@@ -8,3 +8,5 @@ test.csv
 test_series.csv
 test_series.npy
 np_data_array.npy
+result2.csv
+coin_data.npy

@@ -1,8 +1,8 @@
 import os
 import numpy as np
+import csv
 
-"""
-Max Size is 769024
+#Max Size is 769024
 def find_max_size():
     i = 0
     max_size = 0
@@ -14,10 +14,11 @@ def find_max_size():
         print(i)
     print(max_size)
     return max_size
-"""
+
 
 def create_npy_file(max_size):
-    #csvFile = open('./result.csv','w',newline='')
+    csvFile = open('./result.csv','w',newline='')
+    writer = csv.writer(csvFile)
     data = []
     data2d = [[]]
     i=0
@@ -55,9 +56,9 @@ def create_npy_file(max_size):
         data.extend(zeros_array)
 
         # Appends to 2d array
-        data2d.append(data)
+        #data2d.append(data)
 
-        #writer.writerow(data)
+        writer.writerow(data)
 
         # Empties data array
         data = []
@@ -66,9 +67,9 @@ def create_npy_file(max_size):
         print(i)
 
     # Saves .npy file
-    result_array = np.array(data2d)
-    np.save('coin_data', result_array)
-    print(result_array)
+    #result_array = np.array(data2d)
+    #np.save('coin_data', result_array)
+    #print(result_array)
 
-#max_size = find_max_size()
-create_npy_file(769024)
+max_size = find_max_size()
+create_npy_file(max_size)
