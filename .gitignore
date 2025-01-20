@@ -4,3 +4,7 @@
 data_raw.zip
 result.csv
 test.csv
+/Tests
+test_series.csv
+test_series.npy
+np_data_array.npy
