@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 # --------------------
 # PARAMETERS
 # --------------------
-BATCH_SIZE = 4
+BATCH_SIZE = 8
 LEARNING_RATE = 0.001
-EPOCHS = 5
+EPOCHS = 50
 TRAIN_SPLIT = 0.7
 VAL_SPLIT = 0.15
 TEST_SPLIT = 0.15
@@ -21,7 +21,7 @@ SEED = 42
 # DATASET HANDLING
 # --------------------
 class CoinDataset(Dataset):
-    def __init__(self, file_path, normalize=True):
+    def __init__(self, file_path, normalize=False):
         print("Loading dataset from:", file_path)
         # Load the data from the .npy file
         self.data = np.load(file_path, allow_pickle=True)
@@ -49,7 +49,7 @@ class CoinClassifier(nn.Module):
     def __init__(self):
         super(CoinClassifier, self).__init__()
         self.conv1 = nn.Conv1d(1, 16, kernel_size=3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm1d(16)
+        self.bn1 = nn.BatchNorm1d(16, track_running_stats=False)
         self.pool = nn.MaxPool1d(2)
 
         self.conv_blocks = nn.Sequential(
@@ -60,7 +60,7 @@ class CoinClassifier(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Linear(16 * 256, 100),  # This will be updated dynamically
-            nn.BatchNorm1d(100),
+            nn.BatchNorm1d(100, track_running_stats=False),
             nn.Sigmoid(),
             nn.Linear(100, 7)  # 7 classes for the 7 coin types
         )
@@ -68,7 +68,7 @@ class CoinClassifier(nn.Module):
     def _conv_block(self, in_channels, out_channels):
         return nn.Sequential(
             nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm1d(out_channels),
+            nn.BatchNorm1d(out_channels, track_running_stats=False),
             nn.ReLU()
         )
 
@@ -79,7 +79,7 @@ class CoinClassifier(nn.Module):
         # Dynamically calculate the flattened size if not set
         if self.flattened_size is None:
             self.flattened_size = x.shape[1] * x.shape[2]
-            self.fc[0] = nn.Linear(self.flattened_size, 100)  # Update the first FC layer dynamically
+            self.fc[0] = nn.Linear(self.flattened_size, 100).to(device)  # Update the first FC layer dynamically and move to device
 
         x = x.view(x.size(0), -1)  # Flatten
         x = self.fc(x)
