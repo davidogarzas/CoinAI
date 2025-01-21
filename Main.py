@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 # --------------------
 # PARAMETERS
 # --------------------
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 LEARNING_RATE = 0.001
-EPOCHS = 50
+EPOCHS = 75
 TRAIN_SPLIT = 0.7
 VAL_SPLIT = 0.15
 TEST_SPLIT = 0.15
@@ -90,6 +90,10 @@ class CoinClassifier(nn.Module):
 # --------------------
 def train_model(model, criterion, optimizer, train_loader, val_loader, epochs):
     print("Starting training...")
+    train_losses = []
+    train_accuracies = []
+    val_accuracies = []
+
     for epoch in range(epochs):
         model.train()
         train_loss, correct = 0, 0
@@ -106,8 +110,31 @@ def train_model(model, criterion, optimizer, train_loader, val_loader, epochs):
 
         train_acc = correct / len(train_loader.dataset)
         val_acc = evaluate_model(model, val_loader)
+        train_losses.append(train_loss / len(train_loader))
+        train_accuracies.append(train_acc)
+        val_accuracies.append(val_acc)
         print(f"Epoch {epoch+1}/{epochs} - Loss: {train_loss:.4f} - Train Acc: {train_acc:.4f} - Val Acc: {val_acc:.4f}")
     print("Training completed.")
+
+    # Plot training loss and accuracy trends
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(range(1, epochs + 1), train_losses, label='Training Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training Loss Trend')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(range(1, epochs + 1), train_accuracies, label='Training Accuracy')
+    plt.plot(range(1, epochs + 1), val_accuracies, label='Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Training and Validation Accuracy Trend')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
 
 def evaluate_model(model, data_loader):
     print("Evaluating model...")
