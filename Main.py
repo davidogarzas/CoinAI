@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 # --------------------
 # PARAMETERS
 # --------------------
-BATCH_SIZE = 4
+BATCH_SIZE = 16
 LEARNING_RATE = 0.001
-EPOCHS = 5
+EPOCHS = 75
 TRAIN_SPLIT = 0.7
 VAL_SPLIT = 0.15
 TEST_SPLIT = 0.15
@@ -21,7 +21,7 @@ SEED = 42
 # DATASET HANDLING
 # --------------------
 class CoinDataset(Dataset):
-    def __init__(self, file_path, normalize=True):
+    def __init__(self, file_path, normalize=False):
         print("Loading dataset from:", file_path)
         # Load the data from the .npy file
         self.data = np.load(file_path, allow_pickle=True)
@@ -48,39 +48,55 @@ class CoinDataset(Dataset):
 class CoinClassifier(nn.Module):
     def __init__(self):
         super(CoinClassifier, self).__init__()
-        self.conv1 = nn.Conv1d(1, 16, kernel_size=3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm1d(16)
-        self.pool = nn.MaxPool1d(2)
-
-        self.conv_blocks = nn.Sequential(
-            *[self._conv_block(16, 16) for _ in range(4)]
+        
+        # Initial Block (Red Arrow)
+        self.initial_block = nn.Sequential(
+            nn.Conv1d(1, 16, kernel_size=3, padding=1),
+            nn.BatchNorm1d(16, track_running_stats=False),
+            nn.ReLU(),
+            nn.MaxPool1d(2)
+        )
+        
+        # 4x Repeated Conv+Pool Blocks (Red + Green Arrows)
+        self.repeated_blocks = nn.Sequential(
+            *[nn.Sequential(
+                nn.Conv1d(16, 16, kernel_size=3, padding=1),
+                nn.BatchNorm1d(16, track_running_stats=False),
+                nn.ReLU(),
+                nn.MaxPool1d(2)
+            ) for _ in range(4)]
+        )
+        
+        # Final Conv+Pool Block (Red + Green Arrows)
+        self.final_block = nn.Sequential(
+            nn.Conv1d(16, 16, kernel_size=3, padding=1),
+            nn.BatchNorm1d(16, track_running_stats=False),
+            nn.ReLU(),
+            nn.MaxPool1d(2)
         )
 
-        self.flattened_size = None  # To store flattened size dynamically
+        # Dynamically calculate flattened size
+        self.flattened_size = None
 
+        # FC Layers (Pink Arrows)
         self.fc = nn.Sequential(
-            nn.Linear(16 * 256, 100),  # This will be updated dynamically
-            nn.BatchNorm1d(100),
+            nn.Linear(1, 100),  # Placeholder (updated dynamically)
+            nn.BatchNorm1d(100, track_running_stats=False),
             nn.Sigmoid(),
-            nn.Linear(100, 7)  # 7 classes for the 7 coin types
-        )
-
-    def _conv_block(self, in_channels, out_channels):
-        return nn.Sequential(
-            nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm1d(out_channels),
-            nn.ReLU()
+            nn.Linear(100, 7)
         )
 
     def forward(self, x):
-        x = self.pool(nn.ReLU()(self.bn1(self.conv1(x))))
-        x = self.conv_blocks(x)
-
-        # Dynamically calculate the flattened size if not set
+        # Input shape: (batch, 1, input_length)
+        x = self.initial_block(x)
+        x = self.repeated_blocks(x)
+        x = self.final_block(x)
+        
+        # Dynamically adjust FC layer
         if self.flattened_size is None:
-            self.flattened_size = x.shape[1] * x.shape[2]
-            self.fc[0] = nn.Linear(self.flattened_size, 100)  # Update the first FC layer dynamically
-
+            self.flattened_size = x.shape[1] * x.shape[2]  # channels * seq_length
+            self.fc[0] = nn.Linear(self.flattened_size, 100).to(x.device)
+        
         x = x.view(x.size(0), -1)  # Flatten
         x = self.fc(x)
         return x
@@ -90,6 +106,10 @@ class CoinClassifier(nn.Module):
 # --------------------
 def train_model(model, criterion, optimizer, train_loader, val_loader, epochs):
     print("Starting training...")
+    train_losses = []
+    train_accuracies = []
+    val_accuracies = []
+
     for epoch in range(epochs):
         model.train()
         train_loss, correct = 0, 0
@@ -106,8 +126,35 @@ def train_model(model, criterion, optimizer, train_loader, val_loader, epochs):
 
         train_acc = correct / len(train_loader.dataset)
         val_acc = evaluate_model(model, val_loader)
+        train_losses.append(train_loss / len(train_loader))
+        train_accuracies.append(train_acc)
+        val_accuracies.append(val_acc)
         print(f"Epoch {epoch+1}/{epochs} - Loss: {train_loss:.4f} - Train Acc: {train_acc:.4f} - Val Acc: {val_acc:.4f}")
     print("Training completed.")
+
+    # Plot training loss and accuracy trends
+    plt.figure(figsize=(12, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(range(1, epochs + 1), train_losses, label='Training Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training Loss Trend')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(range(1, epochs + 1), train_accuracies, label='Training Accuracy')
+    plt.plot(range(1, epochs + 1), val_accuracies, label='Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Training and Validation Accuracy Trend')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+    # Save the final model
+    torch.save(model.state_dict(), "coin_classifier_model.pth")
+    print("Model saved to coin_classifier_model.pth")
 
 def evaluate_model(model, data_loader):
     print("Evaluating model...")
