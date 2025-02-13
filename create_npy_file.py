@@ -20,7 +20,6 @@ def create_npy_file(max_size):
     csvFile = open('./result.csv','w',newline='')
     writer = csv.writer(csvFile)
     data = []
-    data2d = [[]]
     i=0
     for i, x in enumerate(os.listdir("./data_raw")):
         file_type = int(x.split("_")[0])
@@ -43,8 +42,6 @@ def create_npy_file(max_size):
         elif (file_type == 200):
             file_type = 6
 
-        #data.append(filename)
-
         # Adds coin Type
         data.append(file_type)
 
@@ -55,9 +52,7 @@ def create_npy_file(max_size):
         zeros_array = np.zeros(max_size-len(file_data)).tolist()
         data.extend(zeros_array)
 
-        # Appends to 2d array
-        #data2d.append(data)
-
+        # Writes to csv
         writer.writerow(data)
 
         # Empties data array
@@ -65,11 +60,6 @@ def create_npy_file(max_size):
 
         # Print advance
         print(i)
-
-    # Saves .npy file
-    #result_array = np.array(data2d)
-    #np.save('coin_data', result_array)
-    #print(result_array)
 
 max_size = find_max_size()
 create_npy_file(max_size)
